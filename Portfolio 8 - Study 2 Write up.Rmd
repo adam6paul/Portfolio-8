@@ -1,0 +1,429 @@
+---
+title: "Portfolio 8 - Study 2 Write up"
+author: "Adam"
+date: "5/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> The purpose of this portfolio is to have a singular write-up of what we found during Study 2 of my thesis, as well as embed the plots.
+
+## Setting up
+
+```{r packages, echo=TRUE, message=FALSE}
+library('reshape2')
+library('ggplot2')
+library('dplyr')
+library('Rcpp')
+library('readr')
+library('Hmisc')
+library('tidyverse')
+library('psych')
+library('emmeans')
+```
+
+#### Bringing in the data
+
+```{r loading data, echo=TRUE, collapse=TRUE, message=FALSE}
+study1 <- read_csv("Study2_data_R_cleaned.csv")
+
+# Ensuring the dataframe is a tibble.
+as_tibble(study1)
+
+#Taking a look at the table.
+View(study1)
+```
+
+Since I will be putting graphs into the markdown, I need some set-up code. The first is a smaller data-set to work with, the second is graph coding.
+
+```{r smaller data to work with}
+study1_graph <- study1 %>%
+        select(class_belong_comp4, school_belong_comp4, motiv_intrins_comp2, motiv_util_comp3, close_comp3, quiz_average,  condition)
+
+study1_graph$condition = factor(study1_graph$condition,
+                                levels = c(0,1,2),
+                                labels = c("Control", "Prompted discussion", "Prompted disclosure")
+                                )
+```
+
+```{r graph formatting code}
+vis_col =   
+  scale_fill_manual(values = c( #Color codes for the conditions.
+    "Control" = "#fece3d",
+    "Prompted discussion" = "#fd8d3c",
+    "Prompted disclosure" = "#31a354"))
+
+vis_theme =  theme(panel.background = element_blank(), #makes the background invisible
+                   panel.grid.major.y = element_line(color = "#DAE1E7"), #makes the y-axis gridlines appear, but not x-axis
+axis.line = element_line(color = "black")) #makes the axis appear in a dark black color
+
+vis_text =     theme( #trbl are the margin signs, top, right, bottom, left
+    plot.title = element_text(size = 20, margin = margin(b = 5)),
+    plot.subtitle = element_text(size = 12, margin = margin(b= 10)),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 16, hjust = 1),    
+    axis.title.x = element_text(margin = margin(t = 10)),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    axis.text.y = element_text(margin = margin(r = 5)),
+    axis.text.x = element_text(margin = margin(t = 5)),
+  )
+```
+
+## What was the goal of Study 2?
+
+
+The goal of Study 2 was t build on Study 1’s finding that, at least in some cases, disclosure is positively associated with belonging, the purpose of Study 2 was to determine whether disclosure might causally benefit students’ feelings of belonging, their subject area motivation, and their academic performance. 
+
+In the study, I sought to address four hypotheses:
+
+H1: Students in the prompted disclosure condition will report greater belonging, at both the institutional and class levels, than students in either the prompted discussion or control conditions.
+
+H2: Students in the prompted disclosure condition will report greater subject area motivation than students in either the prompted discussion or control conditions.
+
+H3: Students in the prompted disclosure condition will feel closer to their groupmates than students in either the prompted discussion or control conditions.
+
+H4: Students in the prompted disclosure condition will score higher on the quiz than students in either the prompted discussion or control conditions.
+
+
+
+
+### What did I do?
+
+I conducted a laboratory study designed to emulate aspects of an online class. Groups of two to four students from the same Introductory Psychology class participated in sessions of the study together. In order to mimic the experience of an online class, conversations occurred virtually via Zoom. In all conditions, participants first viewed a brief lecture on an introductory psychology topic. Then, participants engaged in a reflection task on the contents of the lecture, which served as the manipulation of disclosure. Afterward, they completed the outcome measures.
+
+Although all participants engaged in a reflection task, the specific content and structure of the task varied in order to manipulate disclosure. In the first condition (“prompted disclosure”), participants were prompted to disclose personal information as a part of answering the questions and asked to share their answers with their classmates. In the second condition (“prompted discussion”), participants were still prompted to share their answers with their groupmates, but their questions did not specifically encourage the sharing of personal information. In the third condition (“control”), participants were given the same questions as the prompted discussion condition but not asked to share their answers with their classmates. Finally, students took a brief quiz on the lecture topic, which served as the measure of performance. The purpose of the three conditions was to isolate the effects of disclosure over and above discussion with classmates.
+
+### How did we analyze the data?
+
+I ran simplified linear regression models with dummy codes to account for students’ Introductory Psychology instructor. I included the following covariates in all models: gender (dummy coded with women as the reference class), race (dummy coded with White as the reference class), number of group members known prior to the study, and number of classmates known prior to the study. When the omnibus test of condition was significant, I then conducted post-hoc tests to compare each of the conditions with each other, using Sidak correction to correct for multiple comparisons.
+
+
+### What did I find?
+
+
+#### Correlations
+
+```{r all conditions bivariate correlations}
+correlations <- study1 %>%
+        select(class_belong_comp4, school_belong_comp4, motiv_intrins_comp2, motiv_util_comp3)
+
+rcorr(as.matrix(correlations))
+    
+```
+
+The first thing I looked at was the correlations between several of the variables of interest. They are reported below:
+
+class belonging and school belonging
+    r=.41, p<.001
+    
+class belonging and intrinsic motivation
+    r=.52, p<.001
+    
+class belonging and utility motivation
+    r=.44, p<.001
+    
+Utility motivation and intrinsic motivation
+    r=.65, p<.001.
+    
+Class belonging and school belonging are pretty strongly correlated- which is great! This provides more support for something I argued in Study 1- that class and school belonging are related, but unique, constructs.
+
+Class belonging was additionally correlated with both levels of motivation pretty strongly- suggesting that belonging may have an impact on these important outcomes. Or, at least, they tend to vary with one another.
+
+However, school belonging was not significantly correlated with intrinsic or utility motivation, which may suggest that belonging at the school does not carry over into individual class outcomes as strongly as class belonging.
+
+
+## Regressions
+
+### Disclosure
+
+Students reported the questions asked them to disclose more in the prompted disclosure condition than either of the other conditions:
+
+Control:              B= -1.264, SE= 0.181, p<.001
+
+Prompted discussion:  B= -1.139, SE= 0.178, p<.001
+
+Asian students also reported more disclosure, meaning these students perceived the questions as asking for more disclosure than their peers.
+
+Asian                 B=  0.524, SE= 0.251, p=.039
+
+Group members known   B=.233, SE=.115, p=.045
+
+The group member finding is a bit odd, I don't know yet what to make of it.
+
+### Self-disclosure
+
+Students reported actually disclosing more in the prompted disclosure condition than either of the other two conditions:
+ 
+Control:              B= -1.172, SE= 0.139, p<.001
+
+Prompted discussion:  B= -1.250, SE= 0.138, p<.001
+
+
+
+###  Group disclosure
+
+Students reported that their groups disclosed more to them in the prompted disclosure condition than either of the other two conditions:
+
+Control:              B= -1.432, SE= 0.130, p<.001
+
+Prompted discussion:  B= -1.446, SE= 0.129, p<.001
+
+
+
+### Group talking
+
+Students did not report any significant differences across conditions in the rates at which they talked.
+
+
+
+#### What does this mean?
+
+These means that the manipulation was successful! Students thought the questions asked them to disclose more, and they reported both they and their groups actually disclosed more.
+
+But, they didn't report any differences in the rates of talking, which should have been the case in the control where they were not asked to speak, meaning students engaged in a lot of spontaneous talking.
+
+
+## Primary analyses
+
+### Closeness
+
+Students reported feeling closer to their groupmates in the prompted disclosure condition than in the prompted discussion condition. However, the difference was not significant between either and the control.
+
+Prompted discussion B= -0.318, SE= 0.110, p=.013
+
+Black               Est=.557, SE=.208, p=.008
+
+
+
+To visualize the difference by condition, here is the graph.
+
+```{r closeness graph, echo=FALSE}
+ggplot(data = study1_graph, aes(x = condition, y= close_comp3, fill = condition)) + #Fill is starting the color code nonsense
+  stat_summary(fun = mean, geom= "bar") + #This is making it measure the mean on the y-axis
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ #mean_cl_normal and geom are making the error bars appear, inherit.aes makes it copy the aes from the beginning, e.g, fill
+  guides(fill = FALSE) + # Allows the aes colors to be done manually.
+  scale_y_continuous(limits = c(0, 5)) + #Affixes the scale to the full range of the measure
+  vis_col + #This, vis_theme, and vis_text are shortcuts. See above.
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "Closeness",
+  subtitle= "Scale (1-5)") + # The terminology for the labels
+  annotate("text", x="Control", y=1, label= "2.80", size=5) + #these lines add the means to the graph
+  annotate("text", x= "Prompted discussion", y=1, label= "2.65", size=5) +
+  annotate("text", x= "Prompted disclosure", y=1, label= "2.93", size=5) +
+  vis_text
+```
+
+What do we see? The first thing is that generally everyone feels about 'somewhat' close with their group, and the control condition seems to sit in between the two groups. There's something interesting happening here, that prompted discussion will later show positive effects for belonging but is not helping the subjective feeling of closeness with classmates.
+
+It also means that H3 was correct. 
+
+
+
+### School belonging
+
+Participants reported no significant differences across conditions on school belonging, which means that H1 is partially wrong. However, multiple of our covariates were significant.
+
+Asian             Est= -1.329, SE=.340, p<.001
+
+Black             Est= -1.267, SE=.458, p=.007 
+
+Multiracial       Est= 0.824,  SE=.396, p=.039 
+
+Classmates known  Est= 0.232,  SE=.073, p=.002
+
+Still, we should look at the graph for the relationship so it's easier to understand.
+
+
+```{r school belonging graph, echo=FALSE}
+ggplot(data = study1_graph, mapping = aes(x = condition, y= school_belong_comp4, fill = condition)) + 
+  stat_summary(fun = mean, geom= "bar") + 
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ 
+  guides(fill = FALSE) + 
+  scale_y_continuous(limits = c(0, 7)) +
+  vis_col + 
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "School belonging",
+  subtitle= "Scale (1-7)") + 
+  annotate("text", x="Control", y=1, label= "5.34", size=5) +
+  annotate("text", x= "Prompted discussion", y=1, label= "5.70", size=5) +
+  annotate("text", x= "Prompted disclosure", y=1, label= "5.41", size=5) +
+  vis_text
+```
+
+The graph shows us that most participants are reporting they somewhat to mostly feel like they belong in school.
+
+
+
+### Class belonging
+
+Surprisingly, prompted discussion was significantly different from prompted disclosure, in the opposite direction we expected. That is, participants in the prompted discussion condition reported greater belonging than those in the prompted discussion condition.
+
+Prompted discussion    B=.584, SE=0.227 p=.034
+
+Asian                  Est=-.618, SE=.320, p=.056
+
+class_know_prior       Est=.265, SE=.069, p<.001
+
+
+Let's look at the graph.
+
+```{r class belonging graph, echo=FALSE}
+ggplot(data = study1_graph, mapping = aes(x = condition, y= class_belong_comp4, fill = condition)) + 
+  stat_summary(fun = mean, geom= "bar") + 
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ 
+  guides(fill = FALSE) + 
+  scale_y_continuous(limits = c(0, 7)) +
+  vis_col + 
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "Class belonging",
+  subtitle= "Scale (1-7)") + 
+  annotate("text", x="Control", y=1, label= "5.47", size=5) +
+  annotate("text", x= "Prompted discussion", y=1, label= "6.08", size=5) +
+  annotate("text", x= "Prompted disclosure", y=1, label= "5.49", size=5) +
+  vis_text
+```
+
+The graph shows us that the control and prompted disclosure are basically the same, but prompted discussion reported higher belonging. Our belief is that being prompted to discuss is more like class experiences, and connected better to classes, so it is more likely to influence class belonging. Additionally, usually belonging interventions are measured over a much longer timespan than our study allowed, so disclosure may not have had time to have an effect on belonging. That's why we want to run a classroom study.
+
+
+
+## Subject Area motivation
+
+### Intrinsic motivation
+
+There was no effect of condition on intrinsic motivation, though we did find that men were more motivated than women, and knowing more classmates was predictive of higher intrinsic motivation.
+
+Gender                   Est=-.410, SE=.143, p=.005
+
+Classmates known         Est=.131,  SE=.051, p=.012
+
+
+```{r intrinsic motivation code, echo=FALSE}
+ggplot(data = study1_graph, mapping = aes(x = condition, y= motiv_intrins_comp2, fill = condition)) + 
+  stat_summary(fun = mean, geom= "bar") + 
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ 
+  guides(fill = FALSE) + 
+  scale_y_continuous(limits = c(0, 5)) +
+  vis_col + 
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "Subject Area Motivation: Intrinsic",
+  subtitle= "Scale (1-5)") + 
+  annotate("text", x="Control", y=1, label= "3.45", size=5) +
+  annotate("text", x= "Prompted discussion", y=1, label= "3.70", size=5) +
+  annotate("text", x= "Prompted disclosure", y=1, label= "3.47", size=5) +
+  vis_text
+```
+
+In general, participants report feeling 'some' intrinsic motivation, but condition did not seem to have an impact.
+
+
+
+### Utility motivation
+
+We found that there was a significant difference between the control and the prompted discussion, such that the prompted discussion was nearly half a point higher on utility motivation than the control.
+
+Control to prompted discussion  
+B=-0.448 SE=.165, p=.022
+
+Gender		Est=-.351, SE=.131, p=.009
+
+Black			Est=.597,  SE=.295, p=.045
+
+Classmates known	Est=.106,  SE=.047, p=.026
+
+```{r utility motivation code, echo=FALSE}
+ggplot(data = study1_graph, mapping = aes(x = condition, y= motiv_util_comp3, fill = condition)) + 
+  stat_summary(fun = mean, geom= "bar") + 
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ 
+  guides(fill = FALSE) + 
+  scale_y_continuous(limits = c(0, 5)) +
+  vis_col + 
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "Subject Area Motivation: Utility",
+  subtitle= "Scale (1-5)") + 
+  annotate("text", x="Control", y=1, label= "3.27", size=5) +
+  annotate("text", x= "Prompted discussion", y=1, label= "3.76", size=5) +
+  annotate("text", x= "Prompted disclosure", y=1, label= "3.55", size=5) +
+  vis_text
+```
+
+
+The control is notably lower than the other two, but overall participants are feeling 'some' utility motivation towards their Intro Psych class.
+
+
+
+### Quiz Performance
+
+There was no significant difference between conditions on quiz performance, everyone scored around 70%.
+
+```{r quiz performance graph, echo=FALSE}
+ggplot(data = study1_graph, mapping = aes(x = condition, y= quiz_average, fill = condition)) + 
+  stat_summary(fun = mean, geom= "bar") + 
+  stat_summary(fun.data = mean_cl_normal, geom= "errorbar", width =.2, inherit.aes = TRUE)+ 
+  guides(fill = FALSE) + 
+  scale_y_continuous(limits = c(0, .9)) +
+  vis_col + 
+  vis_theme + 
+  labs(x = "Condition",
+  y= NULL,
+  title= "Quiz Performance",
+  subtitle= "Scale (1-9)") + 
+  annotate("text", x="Control", y=.20, label= "6.91", size=5) +
+  annotate("text", x= "Prompted discussion", y=.20, label= "7.14", size=5) +
+  annotate("text", x= "Prompted disclosure", y=.20, label= "7.12", size=5) +
+  vis_text
+```
+
+
+
+
+## Exploratory analyses
+
+
+### Thinking deeper
+
+None of the conditions were significant, suggesting that all the questions were equally good for helping students think about the material. Though Hispanic did come out as significant, I suspect this is an artefact of the data and low sample size for Hispanic students.
+
+Hispanic        Est=.662, SE=.314, p=.037
+
+
+
+### Similarity to class
+
+The prompted disclosure condition is significantly different than both conditions. This tells us that prompted disclosure is something that is unlike class assignments, which may have hindered students' ability to connect the disclosure task to class. Again, this is why we want to run our next study in a class.
+
+Control                 B=.556, SE=.194, p=.001
+
+Prompted discussion     B=.856, SE=.190, p<.001
+
+
+
+### Task Enjoyment
+
+Participants in the prompted disclosure condition reported enjoying the task significantly more than participants in the prompted discussion condition.
+
+
+Asian students reported enjoying the task more, and the overall model was significant. This may suggest that Asian students will have a different experience in a disclosure intervention than other students.
+
+Prompted discussion     B=-.446 SE=0.164, p=.023
+
+Asian        Est=.581, SE=.231, p=.013
+
+
+
+## Wrapping up
+
+Putting it all together, the biggest takeaway for me is that we need to run our study within a classroom setting, which is exactly what we hope to do next semester.
